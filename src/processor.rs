@@ -1,4 +1,7 @@
-use crate::id::TaskId;
+use crate::{
+    id::TaskId,
+    stack_pool::{RunningStack, StackPool},
+};
 use alloc::{boxed::Box, collections::VecDeque};
 use core::{
     cell::UnsafeCell,
@@ -11,13 +14,16 @@ use spin::Lazy;
 /// 这个数据结构只能使用无锁的数据结构，因为在内核和用户态使用的锁不一样
 /// 此外，还需要额外的结构来存放每个 CPU 上使用的数据，因为内核有自己重新定义的数据
 /// 可以将 percpu 的初始化放在这里进行，其他的包中不需要使用 percpu 数据
-#[derive(Debug)]
+///
+/// 使用线程接口进行上下文切换时，需要保证换栈的过程中不会被中断，还需要进一步的思考设计，需要进一步写出文档
 #[repr(C, align(64))]
 pub struct Processor {
     /// Processor ready_queue
     ready_queue: LockFreeQueue<TaskId>,
-    ///
+    /// 记录的当前任务标识
     current_task: AtomicCell<Option<TaskId>>,
+    /// 运行栈池
+    stack_pool: StackPool,
 }
 
 unsafe impl Sync for Processor {}
@@ -29,6 +35,7 @@ impl Processor {
         Processor {
             ready_queue: queue,
             current_task: AtomicCell::new(None),
+            stack_pool: StackPool::new(),
         }
     }
 
@@ -64,5 +71,37 @@ impl Processor {
             .iter()
             .min_by_key(|p| p.ready_queue.len())
             .unwrap()
+    }
+}
+
+/// 与当前任务相关的操作
+impl Processor {
+    pub fn current_task(&self) -> Option<TaskId> {
+        self.current_task.load()
+    }
+    pub fn set_current_task(&self, task: TaskId) {
+        self.current_task.store(Some(task));
+    }
+}
+
+/// 与运行栈相关的操作
+impl Processor {
+    pub fn init_running_stack(&self, curr_boot_stack: *mut u8) {
+        self.stack_pool.init(curr_boot_stack);
+    }
+
+    /// 从处理器中取出当前的运行栈
+    pub fn pick_current_stack(&self) -> RunningStack {
+        self.stack_pool.pick_current_stack()
+    }
+
+    /// 获取当前运行栈的引用
+    pub fn current_stack(&self) -> &RunningStack {
+        self.stack_pool.current_stack()
+    }
+
+    /// 设置当前运行栈
+    pub fn set_current_stack(&self, stack: RunningStack) {
+        self.stack_pool.set_current_stack(stack);
     }
 }

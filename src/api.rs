@@ -1,6 +1,11 @@
 use crate::{allocator, id::TaskId, percpu, processor::Processor};
 
 #[no_mangle]
+pub extern "C" fn current_task() -> TaskId {
+    percpu::current_taskid()
+}
+
+#[no_mangle]
 pub extern "C" fn init_primary(cpu_id: usize) {
     allocator::init();
     percpu::init_percpu_primary(cpu_id);

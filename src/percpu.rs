@@ -4,13 +4,18 @@ use alloc::vec::Vec;
 
 /// 这里定义了每个 CPU 的局部数据，因为非 PIC 的代码在共享库中不能正常工作，所以 percpu 库的实现方式在这里不能继续使用
 ///
-use crate::processor::Processor;
+use crate::{id::TaskId, processor::Processor};
 
 #[repr(C, align(64))]
 pub struct PerCPU {
     processor: Processor,
     cpu_id: AtomicUsize,
     is_bsp: AtomicBool,
+}
+
+pub fn current_taskid() -> TaskId {
+    let current_processor = current_processor();
+    current_processor.current_task().unwrap_or(TaskId::NULL)
 }
 
 pub fn current_processor() -> &'static Processor {

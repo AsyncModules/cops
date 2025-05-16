@@ -8,6 +8,7 @@ mod api;
 mod id;
 mod percpu;
 mod processor;
+mod stack_pool;
 
 use allocator::DATA_OFFSET;
 pub use api::*;
