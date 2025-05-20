@@ -5,7 +5,8 @@ use heap::LockedHeap;
 pub(crate) const PAGE_SIZE: usize = 0x1000;
 pub(crate) const DATA_OFFSET: usize = 0x1000;
 
-static COPS_HEAP_SIZE: usize = 4 * PAGE_SIZE * axconfig::SMP;
+// TODO: 这里的大小还需要与 axhal 模块中的链接脚本中的定义一致
+static COPS_HEAP_SIZE: usize = (PAGE_SIZE << 4) * axconfig::SMP;
 
 #[global_allocator]
 static ALLOCATOR: Allocator = Allocator::new();

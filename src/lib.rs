@@ -7,7 +7,6 @@ mod allocator;
 mod api;
 mod id;
 mod percpu;
-mod processor;
 mod stack_pool;
 
 use allocator::DATA_OFFSET;
@@ -27,7 +26,6 @@ pub(crate) fn get_data_base() -> usize {
         );
     }
     (pc & DATA_ALIGN) - DATA_OFFSET
-    // 0
 }
 
 #[cfg(feature = "no_std")]
