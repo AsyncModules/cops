@@ -1,6 +1,26 @@
 use crate::{allocator, id::TaskId, percpu, processor::Processor};
 
 #[no_mangle]
+pub extern "C" fn get_timer_next_deadline() -> usize {
+    percpu::get_timer_next_deadline()
+}
+
+#[no_mangle]
+pub extern "C" fn set_timer_next_deadline(deadline: usize) {
+    percpu::set_timer_next_deadline(deadline);
+}
+
+#[no_mangle]
+pub extern "C" fn this_cpu_id() -> usize {
+    percpu::this_cpu_id()
+}
+
+#[no_mangle]
+pub extern "C" fn this_cpu_is_bsp() -> bool {
+    percpu::this_cpu_is_bsp()
+}
+
+#[no_mangle]
 pub extern "C" fn set_scheduler_ptr(scheduler_ptr: usize) {
     percpu::set_scheduler_ptr(scheduler_ptr);
 }

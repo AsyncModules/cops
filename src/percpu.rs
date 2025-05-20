@@ -11,6 +11,29 @@ pub struct PerCPU {
     processor: Processor,
     cpu_id: AtomicUsize,
     is_bsp: AtomicBool,
+    timer_next_deadline: AtomicUsize,
+}
+
+pub fn get_timer_next_deadline() -> usize {
+    let percpu = get_percpu();
+    percpu.timer_next_deadline.load(Ordering::Relaxed)
+}
+
+pub fn set_timer_next_deadline(deadline: usize) {
+    let percpu = get_percpu();
+    percpu
+        .timer_next_deadline
+        .store(deadline, Ordering::Relaxed);
+}
+
+pub fn this_cpu_id() -> usize {
+    let percpu = get_percpu();
+    percpu.cpu_id.load(Ordering::Relaxed)
+}
+
+pub fn this_cpu_is_bsp() -> bool {
+    let percpu = get_percpu();
+    percpu.is_bsp.load(Ordering::Relaxed)
 }
 
 pub fn set_scheduler_ptr(scheduler_ptr: usize) {
@@ -64,6 +87,7 @@ pub(crate) fn init_percpu_primary(cpu_id: usize) {
         processor: Processor::new(),
         cpu_id: AtomicUsize::new(cpu_id),
         is_bsp: AtomicBool::new(true),
+        timer_next_deadline: AtomicUsize::new(0),
     };
     setup_percpu(cpu_id);
 }
@@ -76,6 +100,7 @@ pub(crate) fn init_percpu_secondary(cpu_id: usize) {
         processor: Processor::new(),
         cpu_id: AtomicUsize::new(cpu_id),
         is_bsp: AtomicBool::new(false),
+        timer_next_deadline: AtomicUsize::new(0),
     };
     setup_percpu(cpu_id);
 }
