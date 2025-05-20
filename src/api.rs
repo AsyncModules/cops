@@ -1,8 +1,28 @@
 use crate::{allocator, id::TaskId, percpu, processor::Processor};
 
 #[no_mangle]
+pub extern "C" fn set_scheduler_ptr(scheduler_ptr: usize) {
+    percpu::set_scheduler_ptr(scheduler_ptr);
+}
+
+#[no_mangle]
+pub extern "C" fn get_scheduler_ptr() -> usize {
+    percpu::get_scheduler_ptr()
+}
+
+#[no_mangle]
 pub extern "C" fn current_task() -> TaskId {
     percpu::current_taskid()
+}
+
+#[no_mangle]
+pub extern "C" fn put_prev_task(task: TaskId, front: bool) {
+    percpu::put_prev_task(task, front);
+}
+
+#[no_mangle]
+pub extern "C" fn set_current_task(task: TaskId) {
+    percpu::set_current_task(task);
 }
 
 #[no_mangle]

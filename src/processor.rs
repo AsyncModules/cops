@@ -24,6 +24,8 @@ pub struct Processor {
     current_task: AtomicCell<Option<TaskId>>,
     /// 运行栈池
     stack_pool: StackPool,
+    /// scheduler_wrapper，这个是用于记录在内核中的调度器的指针，是为了兼容性，当使用非 vdso 调度器时，这个记录实际的调度器的指针，调用的方法是在其他模块实现的；当使用 vdso 调度器时，它记录的调度器封装器的指针，实际调用的方法是 vdso 提供的 api
+    scheduler_ptr: AtomicUsize,
 }
 
 unsafe impl Sync for Processor {}
@@ -36,7 +38,20 @@ impl Processor {
             ready_queue: queue,
             current_task: AtomicCell::new(None),
             stack_pool: StackPool::new(),
+            scheduler_ptr: AtomicUsize::new(0),
         }
+    }
+
+    #[inline]
+    /// Get the scheduler pointer
+    pub fn get_scheduler_ptr(&self) -> usize {
+        self.scheduler_ptr.load(Ordering::Relaxed)
+    }
+
+    #[inline]
+    /// Get the scheduler pointer
+    pub fn set_scheduler_ptr(&self, scheduler_ptr: usize) {
+        self.scheduler_ptr.store(scheduler_ptr, Ordering::Relaxed);
     }
 
     #[inline]

@@ -13,6 +13,26 @@ pub struct PerCPU {
     is_bsp: AtomicBool,
 }
 
+pub fn set_scheduler_ptr(scheduler_ptr: usize) {
+    let current_processor = current_processor();
+    current_processor.set_scheduler_ptr(scheduler_ptr);
+}
+
+pub fn get_scheduler_ptr() -> usize {
+    let current_processor = current_processor();
+    current_processor.get_scheduler_ptr()
+}
+
+pub fn put_prev_task(task: TaskId, front: bool) {
+    let current_processor = current_processor();
+    current_processor.put_prev_task(task, front);
+}
+
+pub fn set_current_task(task: TaskId) {
+    let current_processor = current_processor();
+    current_processor.set_current_task(task);
+}
+
 pub fn current_taskid() -> TaskId {
     let current_processor = current_processor();
     current_processor.current_task().unwrap_or(TaskId::NULL)
