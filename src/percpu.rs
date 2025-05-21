@@ -9,13 +9,14 @@ use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use queue::{AtomicCell, LockFreeQueue};
 
+/// 由于构建脚本中使用的正则表达式没有写中文的匹配，所以这个数据结构内部不能使用中文注解
 #[repr(C, align(64))]
 pub struct PerCPU {
     /// Processor ready_queue
     ready_queue: LockFreeQueue<TaskId>,
-    /// 记录的当前任务标识
+    /// Running TaskId
     current_task: AtomicCell<Option<TaskId>>,
-    /// 运行栈池
+    /// RunningStack Pool
     stack_pool: StackPool,
 }
 
