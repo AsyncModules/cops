@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 use core::{alloc::Layout, ptr::NonNull};
 use queue::{AtomicCell, LockFreeQueue};
 
@@ -13,12 +12,10 @@ pub struct RunningStack {
 impl RunningStack {
     pub fn new_init(curr_boot_stack: *mut u8) -> Self {
         let layout = Layout::from_size_align(axconfig::TASK_STACK_SIZE, 16).unwrap();
-        unsafe {
-            Self {
-                ptr: NonNull::new(curr_boot_stack).unwrap(),
-                layout,
-                is_init: true,
-            }
+        Self {
+            ptr: NonNull::new(curr_boot_stack).unwrap(),
+            layout,
+            is_init: true,
         }
     }
 
@@ -53,7 +50,7 @@ impl Drop for RunningStack {
 /// 若任务占用了某个运行栈，因为处理器只有一个，所以同一时刻只会有一个线程使用，
 /// 若由于负载均衡机制导致在处理器之间迁移，栈的局部性与任务中的 CPU 亲和掩码相关
 /// 这里能够保证是正确的
-pub(crate) struct StackPool {
+pub struct StackPool {
     free_stacks: LockFreeQueue<RunningStack>,
     current: AtomicCell<Option<RunningStack>>,
 }
