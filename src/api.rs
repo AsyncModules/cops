@@ -20,9 +20,9 @@ pub extern "C" fn set_current_task(task: TaskId) {
 }
 
 #[no_mangle]
-pub extern "C" fn init(percpu_base: usize, percpu_size: usize) {
+pub extern "C" fn init(percpu_size: usize) {
     allocator::init();
-    percpu::init_percpu(percpu_base, percpu_size);
+    percpu::init_percpu(percpu_size);
 }
 
 #[no_mangle]

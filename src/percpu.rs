@@ -89,12 +89,17 @@ impl PerCPU {
     }
 }
 
-static PERCPU_AREA_BASE: AtomicUsize = AtomicUsize::new(0);
-static PERCPU_AREA_SIZE: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static mut PERCPU_AREA_SIZE: usize = 0;
 
-pub(crate) fn init_percpu(base: usize, size: usize) {
-    PERCPU_AREA_BASE.store(base, Ordering::Relaxed);
-    PERCPU_AREA_SIZE.store(size, Ordering::Relaxed);
+pub(crate) fn percpu_area_base() -> usize {
+    crate::get_data_base()
+}
+
+pub(crate) fn init_percpu(size: usize) {
+    unsafe {
+        PERCPU_AREA_SIZE = size;
+    }
+    let base = crate::get_data_base();
     for i in 0..axconfig::SMP {
         let percpu = unsafe { &mut *((base + i * size) as *mut PerCPU) };
         *percpu = PerCPU::new();
@@ -102,8 +107,8 @@ pub(crate) fn init_percpu(base: usize, size: usize) {
 }
 
 pub(crate) fn percpus() -> Vec<&'static PerCPU> {
-    let size = PERCPU_AREA_SIZE.load(Ordering::Relaxed);
-    let base = PERCPU_AREA_BASE.load(Ordering::Relaxed);
+    let base = crate::get_data_base();
+    let size = unsafe { PERCPU_AREA_SIZE };
     let mut percpus = Vec::new();
     for i in 0..axconfig::SMP {
         let percpu = unsafe { &*((base + i * size) as *mut PerCPU) };
@@ -112,10 +117,22 @@ pub(crate) fn percpus() -> Vec<&'static PerCPU> {
     percpus
 }
 
-/// Read the architecture-specific thread pointer register on the current CPU.
+/// 这里获取到 PerCPU 数据需要根据 get_data_base 来获取到数据段基址，并且根据 gp 寄存器可以获得到对应的偏移地址
+/// 因为记录了 PERCPU_AREA_SIZE，因此可以根据寄存器中的最后几位来获取到实际的偏移地址
+/// TODO: 支持多架构实现
 #[inline]
 pub(crate) fn get_percpu() -> &'static PerCPU {
+    let base = crate::get_data_base();
+    let size = unsafe { PERCPU_AREA_SIZE };
     let tp: usize;
     unsafe { core::arch::asm!("mv {}, gp", out(reg) tp) }
+    let size_bits = get_bits(size);
+    let mask = (1 << size_bits) - 1;
+    let tp = (tp & mask) + base;
     unsafe { &*(tp as *const PerCPU) }
+}
+
+/// 根据 percpu 数据段的大小来获取对应的指针的最低位宽
+const fn get_bits(size: usize) -> usize {
+    (usize::BITS - size.leading_zeros()) as usize
 }

@@ -11,6 +11,7 @@ mod stack_pool;
 
 use allocator::DATA_OFFSET;
 pub use api::*;
+use percpu::PERCPU_AREA_SIZE;
 
 extern crate alloc;
 
@@ -25,7 +26,7 @@ pub(crate) fn get_data_base() -> usize {
             pc = out(reg) pc,
         );
     }
-    (pc & DATA_ALIGN) - DATA_OFFSET
+    (pc & DATA_ALIGN)
 }
 
 #[cfg(feature = "no_std")]

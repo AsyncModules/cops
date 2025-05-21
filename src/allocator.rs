@@ -1,4 +1,4 @@
-use crate::get_data_base;
+use crate::{get_data_base, PERCPU_AREA_SIZE};
 use core::ptr::NonNull;
 use heap::LockedHeap;
 
@@ -48,16 +48,24 @@ pub fn init() {
     unsafe { ALLOCATOR.init(DATA_OFFSET, COPS_HEAP_SIZE) };
 }
 
+/// 获取 vdso 使用的堆分配器的空间的起始地址
+/// 保证为 4K 对齐
+fn allocator_base() -> usize {
+    let data_base = get_data_base();
+    let percpu_area_size = axconfig::SMP * unsafe { PERCPU_AREA_SIZE };
+    (data_base - DATA_OFFSET + percpu_area_size + PAGE_SIZE - 1) & (!(PAGE_SIZE - 1))
+}
+
 unsafe impl core::alloc::GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
         let ptr = self.heap.lock().alloc(layout).unwrap();
-        let res = (ptr.as_ptr() as usize + get_data_base()) as *mut u8;
+        let res = (ptr.as_ptr() as usize + allocator_base()) as *mut u8;
         res
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
         self.heap.lock().dealloc(
-            NonNull::new_unchecked((ptr as usize - get_data_base()) as *mut u8),
+            NonNull::new_unchecked((ptr as usize - allocator_base()) as *mut u8),
             layout,
         );
     }
