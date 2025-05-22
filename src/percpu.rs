@@ -124,7 +124,7 @@ pub(crate) fn percpus() -> Vec<&'static PerCPU> {
 #[inline]
 pub(crate) fn get_percpu() -> &'static PerCPU {
     let base = crate::get_data_base();
-    let size = unsafe { PERCPU_AREA_SIZE };
+    let size = unsafe { PERCPU_AREA_SIZE } * axconfig::SMP;
     let tp: usize;
     unsafe { core::arch::asm!("mv {}, gp", out(reg) tp) }
     let size_bits = get_bits(size);
