@@ -4,7 +4,6 @@ PAGE_SIZE = 0x1000;
 
 SECTIONS
 {
-	PROVIDE(vdso_data = . - 2 * 4 * PAGE_SIZE);
 	. = SIZEOF_HEADERS;
 
 	.hash		: { *(.hash) }			:text
