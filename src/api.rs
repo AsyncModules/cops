@@ -21,7 +21,7 @@ pub extern "C" fn set_current_task(task: TaskId) {
 
 #[no_mangle]
 pub extern "C" fn init(percpu_size: usize) {
-    allocator::init();
+    allocator::init(percpu_size);
     percpu::init_percpu(percpu_size);
 }
 

@@ -6,7 +6,7 @@ pub(crate) const PAGE_SIZE: usize = 0x1000;
 pub(crate) const DATA_OFFSET: usize = 0x1000;
 
 // TODO: 这里的大小还需要与 axhal 模块中的链接脚本中的定义一致
-static COPS_HEAP_SIZE: usize = (PAGE_SIZE << 4) * axconfig::SMP;
+const COPS_HEAP_SIZE: usize = (PAGE_SIZE << 4) * axconfig::SMP;
 
 #[global_allocator]
 static ALLOCATOR: Allocator = Allocator::new();
@@ -44,8 +44,10 @@ impl Allocator {
 /// buddy system allocator 不可以分配一段虚拟的内存，因为它会写对应的地址，这会导致出现页错误
 /// Arceos 使用的 bitmap 分配器不行，只能在页大小的尺寸进行分配
 ///
-pub fn init() {
-    unsafe { ALLOCATOR.init(DATA_OFFSET, COPS_HEAP_SIZE) };
+pub fn init(percpu_size: usize) {
+    let mut percpu_area_size = axconfig::SMP * percpu_size;
+    percpu_area_size = (percpu_area_size + PAGE_SIZE - 1) & PAGE_SIZE;
+    unsafe { ALLOCATOR.init(DATA_OFFSET, COPS_HEAP_SIZE - percpu_area_size) };
 }
 
 /// 获取 vdso 使用的堆分配器的空间的起始地址
