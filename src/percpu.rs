@@ -1,9 +1,6 @@
 /// 这里定义了每个 CPU 的局部数据，因为非 PIC 的代码在共享库中不能正常工作，
 /// 所以 percpu 库的实现方式在这里不能继续使用
-use crate::{
-    id::TaskId,
-    stack_pool::{RunningStack, StackPool},
-};
+use crate::id::TaskId;
 use alloc::vec::Vec;
 use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
@@ -16,8 +13,6 @@ pub struct PerCPU {
     ready_queue: LockFreeQueue<TaskId>,
     /// Running TaskId
     current_task: AtomicCell<Option<TaskId>>,
-    /// RunningStack Pool
-    stack_pool: StackPool,
 }
 
 impl PerCPU {
@@ -25,7 +20,6 @@ impl PerCPU {
         Self {
             ready_queue: LockFreeQueue::new(),
             current_task: AtomicCell::new(None),
-            stack_pool: StackPool::new(),
         }
     }
 
@@ -68,25 +62,6 @@ impl PerCPU {
 
     pub fn set_current_task(&self, task: TaskId) {
         self.current_task.store(Some(task));
-    }
-
-    pub fn init_running_stack(&self, curr_boot_stack: *mut u8) {
-        self.stack_pool.init(curr_boot_stack);
-    }
-
-    /// 从处理器中取出当前的运行栈
-    pub fn pick_current_stack(&self) -> RunningStack {
-        self.stack_pool.pick_current_stack()
-    }
-
-    /// 获取当前运行栈的引用
-    pub fn current_stack(&self) -> &RunningStack {
-        self.stack_pool.current_stack()
-    }
-
-    /// 设置当前运行栈
-    pub fn set_current_stack(&self, stack: RunningStack) {
-        self.stack_pool.set_current_stack(stack);
     }
 }
 
